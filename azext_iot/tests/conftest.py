@@ -30,6 +30,7 @@ path_iot_hub_monitor_events_entrypoint = (
 )
 path_iot_device_show = "azext_iot.operations.hub._iot_device_show"
 hub_entity = "myhub.azure-devices.net"
+path_device_twin_show_entrypoint = "azext_iot.operations.hub._iot_device_twin_show"
 
 instance_name = generate_generic_id()
 hostname = "{}.subdomain.domain".format(instance_name)
@@ -172,69 +173,63 @@ def fixture_monitor_events_entrypoint(mocker):
 
 
 @pytest.fixture()
-def fixture_iot_device_show_sas(mocker):
-    device = mocker.patch(path_iot_device_show)
-    device.return_value = {
-        "authentication": {
-            "symmetricKey": {
-                "primaryKey": "test_pk",
-                "secondaryKey": "test_sk"
-            },
-            "type": DeviceAuthApiType.sas.value,
-            "x509Thumbprint": {
-                "primaryThumbprint": None,
-                "secondaryThumbprint": None
-            }
-        },
+def fixture_device_twin_show_entrypoint(mocker):
+    device_twin_client = mocker.patch(path_device_twin_show_entrypoint)
+    device_twin_client.return_value = {
+        "authenticationType": "sas",
         "capabilities": {
-            "iotEdge": False
+            "iotEdge": True
         },
         "cloudToDeviceMessageCount": 0,
         "connectionState": "Disconnected",
-        "connectionStateUpdatedTime": "2021-05-27T00:36:11.2861732Z",
-        "deviceId": "Test_Device_1",
-        "etag": "ODgxNTgwOA==",
-        "generationId": "637534345627501371",
-        "hub": "test-iot-hub.azure-devices.net",
-        "lastActivityTime": "2021-05-27T00:18:16.3154299Z",
-        "status": "enabled",
-        "statusReason": None,
-        "statusUpdatedTime": "0001-01-01T00:00:00Z"
-    }
-    return device
-
-
-@pytest.fixture()
-def fixture_self_signed_device_show_self_signed(mocker):
-    device = mocker.patch(path_iot_device_show)
-    device.return_value = {
-        "authentication": {
-            "symmetricKey": {
-                "primaryKey": "test_pk",
-                "secondaryKey": "test_sk"
+        "deviceEtag": "NTQ4ODMwNjY0",
+        "deviceId": "_Test_Device",
+        "deviceScope": "ms-azure-iot-edge://Test_Device-637535090608626001",
+        "etag": "AAAAAAAAAAU=",
+        "lastActivityTime": "2021-05-27T04:48:03.681238Z",
+        "modelId": "",
+        "properties": {
+            "desired": {
+                "$metadata": {
+                    "$lastUpdated": "2021-05-27T04:45:38.5203899Z",
+                    "$lastUpdatedVersion": 5,
+                    "test_prop_1": {
+                        "$lastUpdated": "2021-05-27T04:44:45.9299421Z",
+                        "$lastUpdatedVersion": 4
+                    },
+                    "test_prop_2": {
+                        "$lastUpdated": "2021-05-27T04:45:38.5203899Z",
+                        "$lastUpdatedVersion": 5
+                    }
+                },
+                "$version": 5,
+                "test_prop_1": "test_val_2",
+                "test_prop_2": "test_val_4"
             },
-            "type": DeviceAuthApiType.selfSigned.value,
-            "x509Thumbprint": {
-                "primaryThumbprint": None,
-                "secondaryThumbprint": None
+            "reported": {
+                "$metadata": {
+                    "$lastUpdated": "2021-05-27T04:45:39.5521362Z",
+                    "test_prop_1": {
+                        "$lastUpdated": "2021-05-27T04:43:33.3650357Z"
+                    },
+                    "test_prop_2": {
+                        "$lastUpdated": "2021-05-27T04:45:39.5521362Z"
+                    }
+                },
+                "$version": 5,
+                "test_prop_1": "test_val_2",
+                "test_prop_2": "test_val_4"
             }
         },
-        "capabilities": {
-            "iotEdge": False
-        },
-        "cloudToDeviceMessageCount": 0,
-        "connectionState": "Disconnected",
-        "connectionStateUpdatedTime": "2021-05-27T00:36:11.2861732Z",
-        "deviceId": "Test_Device_1",
-        "etag": "ODgxNTgwOA==",
-        "generationId": "637534345627501371",
-        "hub": "test-iot-hub.azure-devices.net",
-        "lastActivityTime": "2021-05-27T00:18:16.3154299Z",
         "status": "enabled",
-        "statusReason": None,
-        "statusUpdatedTime": "0001-01-01T00:00:00Z"
+        "statusUpdateTime": "0001-01-01T00:00:00Z",
+        "version": 10,
+        "x509Thumbprint": {
+            "primaryThumbprint": None,
+            "secondaryThumbprint": None
+        }
     }
-    return device
+    return device_twin_client
 
 
 # TODO: To be deprecated asap. Leverage mocked_response fixture for this functionality.
