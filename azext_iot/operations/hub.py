@@ -27,7 +27,6 @@ from azext_iot.common.shared import (
     RenewKeyType,
     IoTHubStateType,
     DeviceAuthApiType,
-    ConnectionStringParser,
 )
 from azext_iot.iothub.providers.discovery import IotHubDiscovery
 from azext_iot.common.utility import (
@@ -257,18 +256,11 @@ def _assemble_auth(auth_method, pk, sk):
     )
 
     auth = None
-    if auth_method in [
-        DeviceAuthType.shared_private_key.name,
-        DeviceAuthApiType.sas.value,
-    ]:
+    if auth_method in [DeviceAuthType.shared_private_key.name, DeviceAuthApiType.sas.value]:
         auth = AuthenticationMechanism(
-            symmetric_key=SymmetricKey(primary_key=pk, secondary_key=sk),
-            type=DeviceAuthApiType.sas.value,
+            symmetric_key=SymmetricKey(primary_key=pk, secondary_key=sk), type=DeviceAuthApiType.sas.value
         )
-    elif auth_method in [
-        DeviceAuthType.x509_thumbprint.name,
-        DeviceAuthApiType.selfSigned.value,
-    ]:
+    elif auth_method in [DeviceAuthType.x509_thumbprint.name, DeviceAuthApiType.selfSigned.value]:
         if not pk:
             raise ValueError("primary thumbprint required with selfSigned auth")
         auth = AuthenticationMechanism(
@@ -277,13 +269,8 @@ def _assemble_auth(auth_method, pk, sk):
             ),
             type=DeviceAuthApiType.selfSigned.value,
         )
-    elif auth_method in [
-        DeviceAuthType.x509_ca.name,
-        DeviceAuthApiType.certificateAuthority.value,
-    ]:
-        auth = AuthenticationMechanism(
-            type=DeviceAuthApiType.certificateAuthority.value
-        )
+    elif auth_method in [DeviceAuthType.x509_ca.name, DeviceAuthApiType.certificateAuthority.value]:
+        auth = AuthenticationMechanism(type=DeviceAuthApiType.certificateAuthority.value)
     else:
         raise ValueError("Authorization method {} invalid.".format(auth_method))
     return auth
@@ -877,11 +864,7 @@ def _handle_module_update_params(parameters):
 
 
 def _parse_auth(parameters):
-    valid_auth = [
-        DeviceAuthApiType.sas.value,
-        DeviceAuthApiType.selfSigned.value,
-        DeviceAuthApiType.certificateAuthority.value,
-    ]
+    valid_auth = [DeviceAuthApiType.sas.value, DeviceAuthApiType.selfSigned.value, DeviceAuthApiType.certificateAuthority.value]
     auth = parameters["authentication"].get("type")
     if auth not in valid_auth:
         raise CLIError("authentication.type must be one of {}".format(valid_auth))
@@ -1956,7 +1939,6 @@ def iot_get_sas_token(
     login=None,
     module_id=None,
     auth_type_dataplane=None,
-    connection_string=None,
 ):
     key_type = key_type.lower()
     policy_name = policy_name.lower()
@@ -2126,10 +2108,7 @@ def _build_device_or_module_connection_string(entity, key_type="primary"):
             if key_type == "primary"
             else auth["symmetricKey"]["secondaryKey"]
         )
-    elif auth_type in [
-        DeviceAuthApiType.certificateAuthority.value.lower(),
-        DeviceAuthApiType.selfSigned.value.lower(),
-    ]:
+    elif auth_type in [DeviceAuthApiType.certificateAuthority.value.lower(), DeviceAuthApiType.selfSigned.value.lower()]:
         key = "x509=true"
     else:
         raise CLIError("Unable to form target connection string")
@@ -2426,7 +2405,7 @@ def _iot_c2d_message_receive(target, device_id, lock_timeout=60, ack=None):
             if result.content:
                 target_encoding = result.headers.get("ContentEncoding", "utf-8")
                 logger.info(f"Decoding message data encoded with: {target_encoding}")
-                payload["data"] = result.content.decode(encoding=target_encoding)
+                payload["data"] = result.content.decode(target_encoding)
 
             return payload
         return
@@ -2592,6 +2571,10 @@ def iot_simulate_device(
         if protocol_type == ProtocolType.mqtt.name:
             device = _iot_device_show(target, device_id)
             device_connection_string = _build_device_or_module_connection_string(device, KeyType.primary.value)
+
+            if device and device.get("authentication", {}).get("type", "") != DeviceAuthApiType.sas.value:
+                raise CLIError('MQTT simulation is only supported for symmetric key auth (SAS) based devices')
+
             client_mqtt = mqtt_client(
                 target=target,
                 device_conn_string=device_connection_string,
@@ -2677,7 +2660,6 @@ def iot_device_export(
     resource_group_name=None,
 ):
     from azext_iot._factory import iot_hub_service_factory
-
     client = iot_hub_service_factory(cmd.cli_ctx)
     discovery = IotHubDiscovery(cmd)
     target = discovery.get_target(
@@ -2703,31 +2685,21 @@ def iot_device_export(
             authentication_type=storage_authentication_type,
         )
 
-        user_identity = identity not in [None, "[system]"]
-        if (
-            user_identity
-            and storage_authentication_type != AuthenticationType.identityBased.name
-        ):
+        user_identity = identity not in [None, '[system]']
+        if user_identity and storage_authentication_type != AuthenticationType.identityBased.name:
             raise CLIError(
                 "Device export with user-assigned identities requires identity-based authentication [--storage-auth-type]"
             )
         # Track 2 CLI SDKs provide support for user-assigned identity objects
-        if (
-            ensure_iothub_sdk_min_version(IOTHUB_TRACK_2_SDK_MIN_VERSION)
-            and user_identity
-        ):
-            from azure.mgmt.iothub.models import (
-                ManagedIdentity,
-            )  # pylint: disable=no-name-in-module
-
+        if ensure_iothub_sdk_min_version(IOTHUB_TRACK_2_SDK_MIN_VERSION) and user_identity:
+            from azure.mgmt.iothub.models import ManagedIdentity  # pylint: disable=no-name-in-module
             export_request.identity = ManagedIdentity(user_assigned_identity=identity)
 
         # if the user supplied a user-assigned identity, let them know they need a new CLI/SDK
         elif user_identity:
             raise CLIError(
-                "Device export with user-assigned identities requires a dependency of azure-mgmt-iothub>={}".format(
-                    IOTHUB_TRACK_2_SDK_MIN_VERSION
-                )
+                "Device export with user-assigned identities requires a dependency of azure-mgmt-iothub>={}"
+                .format(IOTHUB_TRACK_2_SDK_MIN_VERSION)
             )
 
         return client.export_devices(
@@ -2789,30 +2761,20 @@ def iot_device_import(
             authentication_type=storage_authentication_type,
         )
 
-        user_identity = identity not in [None, "[system]"]
-        if (
-            user_identity
-            and storage_authentication_type != AuthenticationType.identityBased.name
-        ):
+        user_identity = identity not in [None, '[system]']
+        if user_identity and storage_authentication_type != AuthenticationType.identityBased.name:
             raise CLIError(
                 "Device import with user-assigned identities requires identity-based authentication [--storage-auth-type]"
             )
         # Track 2 CLI SDKs provide support for user-assigned identity objects
-        if (
-            ensure_iothub_sdk_min_version(IOTHUB_TRACK_2_SDK_MIN_VERSION)
-            and user_identity
-        ):
-            from azure.mgmt.iothub.models import (
-                ManagedIdentity,
-            )  # pylint: disable=no-name-in-module
-
+        if ensure_iothub_sdk_min_version(IOTHUB_TRACK_2_SDK_MIN_VERSION) and user_identity:
+            from azure.mgmt.iothub.models import ManagedIdentity  # pylint: disable=no-name-in-module
             import_request.identity = ManagedIdentity(user_assigned_identity=identity)
         # if the user supplied a user-assigned identity, let them know they need a new CLI/SDK
         elif user_identity:
             raise CLIError(
-                "Device import with user-assigned identities requires a dependency of azure-mgmt-iothub>={}".format(
-                    IOTHUB_TRACK_2_SDK_MIN_VERSION
-                )
+                "Device import with user-assigned identities requires a dependency of azure-mgmt-iothub>={}"
+                .format(IOTHUB_TRACK_2_SDK_MIN_VERSION)
             )
 
         return client.import_devices(

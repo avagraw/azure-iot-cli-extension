@@ -19,10 +19,6 @@ from azext_iot.central.providers.v1 import (
     CentralDeviceProviderV1,
     CentralDeviceTemplateProviderV1,
 )
-from azext_iot.central.providers.preview import (
-    CentralDeviceGroupProviderPreview,
-    CentralRoleProviderPreview
-)
 from azext_iot.central.models.devicetwin import DeviceTwin
 from azext_iot.central import models as central_models
 from azext_iot.monitor.property import PropertyMonitor

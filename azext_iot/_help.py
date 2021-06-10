@@ -878,7 +878,8 @@ helps[
                    While the device simulation is running, the device will automatically receive
                    and acknowledge cloud-to-device (c2d) messages. For mqtt simulation, all c2d messages will
                    be acknowledged with completion. For http simulation c2d acknowledgement is based on user
-                   selection which can be complete, reject or abandon. The mqtt simulation also supports direct
+                   selection which can be complete, reject or abandon. Additionally, mqtt simulation is only
+                   supported for symmetric key auth (SAS) based devices. The mqtt simulation also supports direct
                    method invocation which can be acknowledged by a response status code and response payload
 
                    Note: The command by default will set content-type to application/json and content-encoding
