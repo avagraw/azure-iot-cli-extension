@@ -6,17 +6,30 @@ Release History
 0.10.14
 +++++++++++++++
 
+**IoT Central updates**
+
+* Adds support to run root/interface level device commands.
+* Adds support to get command history for root/interface level device commands.
+* The --interface-id parameter for commands "device command run" , "device command history" changed to optional.
+
 **IoT Hub updates**
 
 * Fix for "az iot hub c2d-message receive" - the command will use the "ContentEncoding" header value (which indicates the message body encoding)
   or fallback to utf-8 to decode the received message body.
+
+* Addition for "az iot hub generate-sas-token" - the command will allow offline generation of a SAS Token using a connection string.
+
+* Changes to Edge validation for set-modules and edge deployment creation:
+
+  By default only properties of system modules $edgeAgent and $edgeHub are validated against schemas installed with the IoT extension.
+  This can be disabled by using the --no-validation switch.
 
 **Azure Digital Twins updates**
 
 * Addition of the following commands
 
   * az dt reset - Preview command which deletes all data entities from the target instance (models, twins, twin relationships).
-  
+
 
 0.10.13
 +++++++++++++++
@@ -34,7 +47,7 @@ Release History
 * Public API GA update
 
   * Remove preview tag for  api-token, device, device-template, user routes. Default routes use central GA API's.
-  * Add support for preview and 1.0 routes. 
+  * Add support for preview and 1.0 routes.
   * Addition of the optional '--av' argument to specify the version of API for the requested operation.
 
 **IoT Hub updates**
