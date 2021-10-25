@@ -90,7 +90,6 @@ stages:
 
   - stage: 'test'
     displayName: 'Run tests'
-    cancelTimeoutInMinutes: 1
     pool:
       vmImage: ${{ parameters.vmImage }}
     dependsOn: build
@@ -98,6 +97,7 @@ stages:
     - job: 'testCentral'
       displayName: 'Test IoT Central'
       condition: eq('${{ parameters.testCentral }}', true)
+      cancelTimeoutInMinutes: 1
       steps:
       - template: templates/run-tests-parallel.yml
         parameters:
@@ -108,6 +108,7 @@ stages:
     - job: 'testADT'
       displayName: 'Test Azure DigitalTwins'
       condition: eq('${{ parameters.testADT }}', true)
+      cancelTimeoutInMinutes: 1
       steps:
       - template: templates/run-tests-parallel.yml
         parameters:
@@ -118,6 +119,7 @@ stages:
     - job: 'testDPS'
       displayName: 'Test DPS'
       condition: eq('${{ parameters.testDPS }}', true)
+      cancelTimeoutInMinutes: 1
       steps:
       - template: templates/run-tests-parallel.yml
         parameters:
@@ -128,6 +130,7 @@ stages:
     - job: 'testHub_job_1'
       displayName: 'Test IoT Hub - config, core and jobs'
       condition: eq('${{ parameters.testHub }}', true)
+      cancelTimeoutInMinutes: 1
       steps:
       - template: templates/run-tests-parallel.yml
         parameters:
@@ -138,6 +141,7 @@ stages:
     - job: 'testHub_job_2'
       displayName: 'Test IoT Hub - devices, messaging and modules'
       condition: eq('${{ parameters.testHub }}', true)
+      cancelTimeoutInMinutes: 1
       steps:
       - template: templates/run-tests-parallel.yml
         parameters:
@@ -147,6 +151,7 @@ stages:
 
     - job: 'unitTests'
       displayName: 'Unit tests and code coverage'
+      cancelTimeoutInMinutes: 1
       steps:
       - template: templates/run-tests-parallel.yml
         parameters:
