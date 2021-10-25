@@ -90,6 +90,7 @@ stages:
 
   - stage: 'test'
     displayName: 'Run tests'
+    cancelTimeoutInMinutes: 1
     pool:
       vmImage: ${{ parameters.vmImage }}
     dependsOn: build
