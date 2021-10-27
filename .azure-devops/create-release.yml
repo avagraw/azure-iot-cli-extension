@@ -28,18 +28,6 @@ parameters:
 - name: architecture
   type: string
   default: 'x64'
-- name: 'testCentral'
-  type: boolean
-  default: true
-- name: 'testADT'
-  type: boolean
-  default: true
-- name: 'testDPS'
-  type: boolean
-  default: true
-- name: 'testHub'
-  type: boolean
-  default: true
 
 variables:
   - group: ${{ parameters.variableGroup }}
@@ -96,7 +84,6 @@ stages:
     jobs:
     - job: 'testCentral'
       displayName: 'Test IoT Central'
-      cancelTimeoutInMinutes: 1
       steps:
       - template: templates/run-tests-parallel.yml
         parameters:
@@ -106,7 +93,6 @@ stages:
     
     - job: 'testADT'
       displayName: 'Test Azure DigitalTwins'
-      cancelTimeoutInMinutes: 1
       steps:
       - template: templates/run-tests-parallel.yml
         parameters:
@@ -116,7 +102,6 @@ stages:
 
     - job: 'testDPS'
       displayName: 'Test DPS'
-      cancelTimeoutInMinutes: 1
       steps:
       - template: templates/run-tests-parallel.yml
         parameters:
@@ -126,7 +111,6 @@ stages:
     
     - job: 'testHub_job_1'
       displayName: 'Test IoT Hub - config, core and jobs'
-      cancelTimeoutInMinutes: 1
       steps:
       - template: templates/run-tests-parallel.yml
         parameters:
@@ -136,7 +120,6 @@ stages:
     
     - job: 'testHub_job_2'
       displayName: 'Test IoT Hub - devices, messaging and modules'
-      cancelTimeoutInMinutes: 1
       steps:
       - template: templates/run-tests-parallel.yml
         parameters:

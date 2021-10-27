@@ -34,18 +34,6 @@ parameters:
 - name: architecture
   type: string
   default: 'x64'
-- name: 'testCentral'
-  type: boolean
-  default: true
-- name: 'testADT'
-  type: boolean
-  default: true
-- name: 'testDPS'
-  type: boolean
-  default: true
-- name: 'testHub'
-  type: boolean
-  default: true
 
 variables:
   - group: aziotcli_test_nightly
@@ -110,10 +98,6 @@ stages:
       parameters:
         azureCLIVersion: min
         pythonVersion: $(pythonVersionTestRun)
-        testADT: ${{ parameters.testADT }}
-        testCentral: ${{ parameters.testCentral }}
-        testDPS: ${{ parameters.testDPS }}
-        testHub: ${{ parameters.testHub }}
 
   - stage: 'test_msi'
     displayName: 'Run all tests against Windows MSI install'
@@ -125,10 +109,6 @@ stages:
       parameters:
         azureCLIVersion: msi
         pythonVersion: $(pythonVersionTestRun)
-        testADT: ${{ parameters.testADT }}
-        testCentral: ${{ parameters.testCentral }}
-        testDPS: ${{ parameters.testDPS }}
-        testHub: ${{ parameters.testHub }}
           
   - stage: 'kpi'
     displayName: 'Build KPIs'
