@@ -16,6 +16,15 @@ else {
     az iot hub create -g $resource_group_name --name $iothub_name --sku S1
 }
 
+if ($args[2]) {
+    $dps_name = $args[2]
+}
+else {
+    Write-Host "`r`nProvisioning DPS for running smoke tests..."
+    $dps_name = "smoketest-dps-$(New-Guid)"
+    az iot dps create -g $resource_group_name --name $dps_name
+}
+
 $hub_module_id = "smoke-test-module"
 $hub_config_name = "smoke-test-config"
 $hub_config_content = "`"{'moduleContent': {'properties.desired.chillerWaterSettings': {'temperature': 38, 'pressure': 78}}}`""
@@ -29,11 +38,27 @@ $edge_deployment_metrics = "`"{'queries':{'mymetric':'SELECT deviceId from devic
 $edge_deployment_condition = "`"tags.environment='dev'`""
 $edge_module_content = "scripts/smoke_tests/edge_module_content.json"
 
-$dps_name = "smoketest-dps-$(New-Guid)"
 $dps_registration_id = "smoke-test-dps-registration"
 $dps_enrollment_id = "smoke-test-dps-enrollment"
 $dps_enrollment_group_id = "smoke-test-dps-enrollment-group"
 $dps_endorsement_key = "AToAAQALAAMAsgAgg3GXZ0SEs/gakMyNRqXXJP1S124GUgtk8qHaGzMUaaoABgCAAEMAEAgAAAAAAAEAibym9HQP9vxCGF5dVc1QQsAGe021aUGJzNol1/gycBx3jFsTpwmWbISRwnFvflWd0w2Mc44FAAZNaJOAAxwZvG8GvyLlHh6fGKdh+mSBL4iLH2bZ4Ry22cB3CJVjXmdGoz9Y/j3/NwLndBxQC+baNvzvyVQZ4/A2YL7vzIIj2ik4y+ve9ir7U0GbNdnxskqK1KFIITVVtkTIYyyFTIR0BySjPrRIDj7r7Mh5uF9HBppGKQCBoVSVV8dI91lNazmSdpGWyqCkO7iM4VvUMv2HT/ym53aYlUrau+Qq87Tu+uQipWYgRdF11KDfcpMHqqzBQQ1NpOJVhrsTrhyJzO7KNw=="
+
+$dt_instance_name = "smoketest-dt-$(New-Guid)"
+$dt_private_endpoint_name = "smoketest-dt-pvt-endpoint"
+# $dt_private_endpoint_group = "API"
+$dt_connection_name = "smoketest-dt-connection"
+$dt_nsg_name = "API"
+$dt_vnet_name = "smoketest-dt-vnet"
+$dt_subnet_name = "smoketest-dt-subnet"
+$dt_route_name = "smoketest-dt-route"
+$dtmi_model_content = "scripts/smoke_tests/dtmi_model.json"
+$dt_twin_id = "smoketest-dt-twin"
+$dt_target_twin_id = "smoketest-dt-target-twin"
+$dt_twin_relationship_id = "smoketest-dt-twin-relationship"
+
+# DT Setup
+Write-Host "`r`nSetting up environment to run digital twin commands..."
+az dt create -n $dt_instance_name -g $resource_group_name
 
 $commands = @()
 
@@ -70,7 +95,6 @@ $commands += "az iot edge deployment create -g $resource_group_name -d $edge_dep
 $commands += "az iot edge deployment show -g $resource_group_name -d $edge_deployment_name -n $iothub_name"
 
 # IoT DPS
-$commands += "az iot dps create -g $resource_group_name --name $dps_name"
 $commands += "az iot dps compute-device-key -g $resource_group_name --key $dps_endorsement_key --registration-id $dps_registration_id"
 $commands += "az iot dps enrollment-group create -g $resource_group_name --dps-name $dps_name --enrollment-id $dps_enrollment_group_id"
 $commands += "az iot dps enrollment-group show -g $resource_group_name --dps-name $dps_name --enrollment-id $dps_enrollment_group_id"
@@ -79,7 +103,35 @@ $commands += "az iot dps enrollment show -g $resource_group_name --dps-name $dps
 $commands += "az iot dps registration list -g $resource_group_name --dps-name $dps_name --enrollment-id $dps_enrollment_group_id"
 $commands += "az iot dps connection-string show -g $resource_group_name --dps-name $dps_name --all"
 
+# Digital Twins
+$commands += "az dt show -n $dt_instance_name"
+
+$commands += "az dt route create -n $dt_instance_name --endpoint-name $dt_private_endpoint_name --route-name $dt_route_name"
+$commands += "az dt route show -n $dt_instance_name --route-name $dt_route_name"
+
+$commands += "az dt model create -n $dt_instance_name --models $dtmi_model_content"
+$commands += "az dt model show -n $dt_instance_name --dtmi 'dtmi:com:example:Floor;1' --definition"
+
+$commands += "az dt twin create -n $dt_instance_name --dtmi 'dtmi:com:example:Room;1' --twin-id $dt_twin_id"
+$commands += "az dt twin show -n $dt_instance_name --twin-id $dt_twin_id"
+$commands += "az dt twin query -n $dt_instance_name -q 'select * from digitaltwins' --show-cost"
+$commands += "az dt twin telemetry send -n $dt_instance_name --twin-id $dt_twin_id"
+$commands += "az dt twin create -n $dt_instance_name --dtmi 'dtmi:com:example:Room;1' --twin-id $dt_target_twin_id"
+$commands += "az dt twin relationship create -n $dt_instance_name --relationship-id $dt_twin_relationship_id --relationship contains --twin-id $dt_twin_id --target $dt_target_twin_id"
+$commands += "az dt twin relationship show -n $dt_instance_name --twin-id $dt_twin_id --relationship-id $dt_twin_relationship_id"
+
 # Resource Cleanup
+$commands += "az dt model delete -n $dt_instance_name --dtmi 'dtmi:com:example:Floor;1'"
+$commands += "az dt twin relationship delete-all -n $dt_instance_name --twin-id $dt_twin_id"
+$commands += "az dt twin delete -n $dt_instance_name --twin-id $dt_twin_id"
+$commands += "az dt twin delete -n $dt_instance_name --twin-id $dt_target_twin_id"
+$commands += "az dt route delete -n $dt_instance_name --route-name $dt_route_name"
+$commands += "az network nsg delete -n $dt_nsg_name -g $resource_group_name"
+$commands += "az network vnet delete -n $dt_vnet_name -g $resource_group_name"
+$commands += "az dt network private-endpoint connection delete -n $dt_instance_name --cn $connection_name -y --no-wait"
+$commands += "az network private-endpoint delete --name $dt_private_endpoint_name --resource-group $resource_group_name"
+$commands += "az dt reset -n $dt_instance_name"
+$commands += "az dt delete -n $dt_instance_name"
 $commands += "az iot hub module-identity delete -g $resource_group_name -m $hub_module_id -d $device_id -n $iothub_name"
 $commands += "az iot hub configuration delete -g $resource_group_name -c $hub_config_name -n $iothub_name"
 $commands += "az iot hub device-identity delete -g $resource_group_name -n $iothub_name -d $device_id"
